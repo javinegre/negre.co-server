@@ -1,0 +1,24 @@
+{
+  "name": "negre.co-server",
+  "version": "0.0.1",
+  "description": "negre.co Router",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.15.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/javinegre/negre.co-server.git"
+  },
+  "author": "Javier Negre Gallén",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/javinegre/negre.co-server/issues"
+  },
+  "homepage": "https://github.com/javinegre/negre.co-server#readme"
+}
