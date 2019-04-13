@@ -5,6 +5,8 @@ const BicingApp = require('./apps/bicing/index');
 const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
 
+app.use('/.well-known', express.static(__dirname + '/well-known-folder'));
+
 app.use('/bicing/', BicingApp);
 app.use('/slides/', SlidesApp);
 app.use('/', HomeApp);
