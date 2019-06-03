@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 
-const BicingApp = require('./apps/bicing/index');
+const BicingApp = require('./apps/bicing-vue/index');
 const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
 
