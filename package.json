@@ -4,7 +4,7 @@
   "description": "negre.co Router",
   "main": "server.js",
   "dependencies": {
-    "express": "^4.15.2"
+    "express": "4.17.1"
   },
   "devDependencies": {},
   "scripts": {
