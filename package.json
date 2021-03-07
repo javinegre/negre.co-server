@@ -2,7 +2,7 @@
   "name": "negre.co-server",
   "version": "0.0.1",
   "description": "negre.co Router",
-  "main": "server.js",
+  "main": "server.ts",
   "dependencies": {
     "@types/express": "^4.17.11",
     "@types/node": "^14.14.32",
@@ -12,10 +12,10 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "serve": "nodemon server.js",
-    "serve:dev": "nodemon --watch 'server.ts' --watch 'app/**/index.ts' --exec 'ts-node' server.ts",
-    "restart-server": "forever restart server.js && sudo service nginx restart"
+    "start": "forever start --spinSleepTime 10000 -c ts-node server.ts",
+    "restart-server": "forever restart -c ts-node server.ts && sudo service nginx restart",
+    "serve": "nodemon --exec 'ts-node' server.ts",
+    "serve:dev": "nodemon --watch 'server.ts' --watch 'app/**/index.ts' --exec 'ts-node' server.ts"
   },
   "repository": {
     "type": "git",

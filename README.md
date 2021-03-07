@@ -94,6 +94,11 @@ More info:
 
 ## Commands
 
+### Server
+
+    $ yarn start
+    $ yarn restart-server
+
 ### Nginx
 
     /* Configuration */
