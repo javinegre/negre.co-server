@@ -14,6 +14,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "serve": "nodemon server.js",
+    "serve:dev": "nodemon --watch 'server.ts' --watch 'app/**/index.ts' --exec 'ts-node' server.ts",
     "restart-server": "forever restart server.js && sudo service nginx restart"
   },
   "repository": {
