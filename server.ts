@@ -9,6 +9,7 @@ const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
 
 app.use('/.well-known', express.static(__dirname + '/well-known-folder'));
+app.use('/files', express.static(__dirname + '/public-files'));
 
 app.use('/bicing/', BicingApp);
 app.use('/bicing-vue/', BicingVueApp);
