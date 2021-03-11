@@ -14,8 +14,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "forever start --spinSleepTime 10000 -c ts-node server.ts",
     "restart-server": "forever restart -c ts-node server.ts && sudo service nginx restart",
-    "serve": "nodemon --exec 'ts-node' server.ts",
-    "serve:dev": "nodemon --watch 'server.ts' --watch 'app/**/index.ts' --exec 'ts-node' server.ts"
+    "start:dev": "nodemon --watch 'server.ts' --watch 'app/**/index.ts' --exec 'ts-node' server.ts"
   },
   "repository": {
     "type": "git",
