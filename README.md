@@ -111,8 +111,7 @@ More info:
     $ sudo nginx -t
 
 ### Forever
-
-    $ forever start --spinSleepTime 10000 server.js
-    $ forever restart server.js
-    $ forever stop server.js
+    $ forever start -v -c ts-node server.ts
+    $ forever restart server.ts
+    $ forever stop server.ts
     $ forever list
