@@ -1,5 +1,6 @@
 # negre.co server
 
+* [Architecture](#Architecture)
 * [Ubuntu 18.04 Setup](#Ubuntu-18.04-Setup)
 * [Nginx setup](#Nginx-setup)
 * [Node.js](#Node.js)
@@ -8,6 +9,51 @@
 * [Commands](#Commands)
 
 ---
+
+## Architecture
+
+This repo is a thin Express router (`server.ts`) that mounts a set of
+independently-repo'd sub-apps as middleware. Each directory under `apps/`
+and `apis/` is its own separate git repo (own remote, own history) checked
+out as a sibling directory in production — they're gitignored here on
+purpose, this repo only ever tracks the glue that mounts them:
+
+```
+/.well-known  -> well-known-folder/           (static, SSL cert validation)
+/files        -> public-files/                (static)
+/bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
+/bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
+/bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
+/slides/      -> apps/slides                   (static)
+/             -> apps/home                     (Express, catch-all: /, /des, /cv, 404 handler)
+```
+
+There is no submodule/lockfile pinning these sub-repos to specific commits —
+each is deployed independently via its own `deploy.sh`.
+
+**Process model:** production runs `tsx server.ts` (no build step; `tsx`
+transpiles on-demand, including transitively into the mounted sub-apps'
+`.ts` source) under PM2 in fork mode, 1 instance — not clustered, since
+each mounted sub-app is a shared in-process module (notably
+`apis/bicing-api`'s in-memory cache), and clustering would multiply
+independent caches/upstream API calls instead of speeding anything up.
+
+**Static assets:** nginx serves `/files`, `/.well-known`, `/bicing/`, and
+`/bicing-2021/` directly (see `nginx/negre.co.conf`), bypassing Node
+entirely for those paths — this is additive/reversible, Express's
+`express.static` mounts stay in `server.ts` as a fallback. The `home` app
+(`/`, `/des`, `/cv`, custom 404) stays proxied to Node since it's the
+catch-all route with real routing logic.
+
+**Commands:**
+```
+yarn dev        # tsx watch server.ts
+yarn typecheck  # tsc --noEmit
+yarn lint       # eslint server.ts
+yarn pm2:start  # pm2 start ecosystem.config.js
+yarn pm2:reload # pm2 reload ecosystem.config.js --update-env
+yarn pm2:logs   # pm2 logs negre-co-server
+```
 
 ## Ubuntu 18.04 Setup
 Reference: https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04
@@ -94,10 +140,9 @@ More info:
 
 ## Commands
 
-### Server
-
-    $ yarn start
-    $ yarn restart-server
+> The sections above document the original Ubuntu 18.04 / `forever` setup
+> (kept for historical reference). Current process management is PM2 — see
+> [Architecture](#Architecture) for the up-to-date commands.
 
 ### Nginx
 
@@ -110,8 +155,15 @@ More info:
     $ sudo service nginx status
     $ sudo nginx -t
 
-### Forever
+### Forever (legacy — superseded by PM2, see Architecture section)
     $ forever start -v -c ts-node server.ts
     $ forever restart server.ts
     $ forever stop server.ts
     $ forever list
+
+### PM2
+    $ pm2 start ecosystem.config.js
+    $ pm2 reload ecosystem.config.js --update-env
+    $ pm2 stop negre-co-server
+    $ pm2 status
+    $ pm2 logs negre-co-server -f
