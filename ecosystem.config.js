@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'negre-co-server',
       script: 'server.ts',
-      interpreter: 'tsx',
+      interpreter: './node_modules/.bin/tsx',
       cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
