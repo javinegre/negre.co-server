@@ -7,24 +7,34 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.6.29",
     "@types/express": "^4.17.11",
     "@types/node": "^20.0.0",
+    "better-auth": "^1.6.29",
+    "better-sqlite3": "^13.0.3",
     "express": "4.17.1",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.0.0",
     "typescript-eslint": "^8.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch server.ts",
+    "predev": "yarn build:login",
+    "dev": "tsx watch --env-file=.env server.ts",
+    "prestart": "yarn build:login",
     "start": "tsx server.ts",
+    "build:login": "esbuild auth/client-entry.ts --bundle --format=esm --outfile=auth/public/client.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint server.ts --max-warnings=0",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:reload": "pm2 reload ecosystem.config.js --update-env",
+    "lint": "eslint server.ts auth/*.ts scripts/*.ts --max-warnings=0",
+    "auth:migrate": "npx --yes @better-auth/cli@latest migrate --config ./auth/auth.ts -y",
+    "invite": "tsx --env-file=.env scripts/invite.ts",
+    "pm2:start": "yarn build:login && pm2 start ecosystem.config.js",
+    "pm2:reload": "yarn build:login && pm2 reload ecosystem.config.js --update-env",
     "pm2:logs": "pm2 logs negre-co-server"
   },
   "repository": {

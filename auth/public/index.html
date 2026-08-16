@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>negre.co — Sign in</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, sans-serif;
+    max-width: 24rem;
+    margin: 4rem auto;
+    padding: 0 1rem;
+    text-align: center;
+  }
+  button {
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #error { color: #c0392b; min-height: 1.5em; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+  <h1>negre.co</h1>
+  <p id="status">Loading…</p>
+
+  <div id="invite-panel" hidden>
+    <p>You've been invited as <strong id="invite-email"></strong>.</p>
+    <button id="enroll-btn">Set up passkey</button>
+  </div>
+
+  <div id="signin-panel" hidden>
+    <button id="signin-btn">Sign in with passkey</button>
+  </div>
+
+  <p id="error" role="alert"></p>
+
+  <script type="module">
+    import { authClient } from '/login/client.js';
+
+    const params = new URLSearchParams(location.search);
+    const invite = params.get('invite');
+    const next = params.get('next') || '/';
+
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const invitePanel = document.getElementById('invite-panel');
+    const signinPanel = document.getElementById('signin-panel');
+
+    function showError(message) {
+      errorEl.textContent = message;
+    }
+
+    function goNext() {
+      location.href = next;
+    }
+
+    function setBusy(button, busy) {
+      button.disabled = busy;
+    }
+
+    if (invite) {
+      statusEl.hidden = true;
+      document.getElementById('invite-email').textContent = '(check the link you were sent)';
+      invitePanel.hidden = false;
+
+      const enrollBtn = document.getElementById('enroll-btn');
+      enrollBtn.addEventListener('click', async () => {
+        setBusy(enrollBtn, true);
+        showError('');
+
+        const { error: addError } = await authClient.passkey.addPasskey({
+          name: 'Primary passkey',
+          context: invite,
+        });
+        if (addError) {
+          showError(addError.message || 'Could not set up passkey.');
+          setBusy(enrollBtn, false);
+          return;
+        }
+
+        // Registering a passkey does not itself start a session — sign in
+        // with the credential just created to establish one.
+        const { error: signInError } = await authClient.signIn.passkey();
+        if (signInError) {
+          showError('Passkey created. Please sign in.');
+          invitePanel.hidden = true;
+          signinPanel.hidden = false;
+          setBusy(enrollBtn, false);
+          return;
+        }
+        goNext();
+      });
+    } else {
+      statusEl.hidden = true;
+      signinPanel.hidden = false;
+
+      const signinBtn = document.getElementById('signin-btn');
+      signinBtn.addEventListener('click', async () => {
+        setBusy(signinBtn, true);
+        showError('');
+
+        const { error } = await authClient.signIn.passkey();
+        if (error) {
+          showError(error.message || 'Sign-in failed.');
+          setBusy(signinBtn, false);
+          return;
+        }
+        goNext();
+      });
+    }
+  </script>
+</body>
+</html>

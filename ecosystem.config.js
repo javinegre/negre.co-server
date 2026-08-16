@@ -4,6 +4,9 @@ module.exports = {
       name: 'negre-co-server',
       script: 'server.ts',
       interpreter: './node_modules/.bin/tsx',
+      // BETTER_AUTH_SECRET (and any other secret) lives in the droplet's
+      // own .env, loaded here rather than hardcoded — never committed.
+      interpreter_args: '--env-file=.env',
       cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
@@ -17,6 +20,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 8080,
+        BETTER_AUTH_URL: 'https://negre.co',
+        AUTH_RP_ID: 'negre.co',
       },
     },
   ],
