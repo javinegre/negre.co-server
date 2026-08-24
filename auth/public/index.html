@@ -47,7 +47,21 @@
 
     const params = new URLSearchParams(location.search);
     const invite = params.get('invite');
-    const next = params.get('next') || '/';
+
+    // next comes from the URL (either typed by hand or set by requireAuth's
+    // redirect), so it's untrusted: without this check, /login?next=https://evil.com
+    // would send a freshly authenticated user off-site. Only same-origin
+    // relative paths are allowed through.
+    function sanitizeNext(value) {
+      if (!value || !/^\/(?!\/|\\)/.test(value)) return '/';
+      try {
+        const url = new URL(value, location.origin);
+        return url.origin === location.origin ? url.pathname + url.search + url.hash : '/';
+      } catch {
+        return '/';
+      }
+    }
+    const next = sanitizeNext(params.get('next'));
 
     const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
