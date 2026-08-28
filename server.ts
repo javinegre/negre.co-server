@@ -7,6 +7,10 @@ const express = require('express');
 const app: Express = express();
 
 const BicingApi = require('./apis/bicing-api/index');
+// Separate entry point from bicing-api's index: this is the only part of that
+// service that needs a signed-in user, and the gate stays here rather than in
+// the API's own repo.
+const BicingConfigApi = require('./apis/bicing-api/config-api');
 
 const BicingApp = express.static(__dirname + '/apps/bicing-2023/dist');
 const Bicing2021App = require('./apps/bicing-2021/index');
@@ -28,6 +32,10 @@ app.use('/login', express.static(__dirname + '/auth/public'));
 app.use('/.well-known', express.static(__dirname + '/well-known-folder'));
 app.use('/files', express.static(__dirname + '/public-files'));
 
+// Mounted ahead of the rest of the API so requireAuth wraps only these routes.
+// The express.json() they need lives inside that router, below the better-auth
+// handler above — never hoist it to the top level.
+app.use('/bicing/api/v2/config', requireAuth, BicingConfigApi);
 app.use('/bicing/api/', BicingApi);
 app.use('/bicing/', BicingApp);
 app.use('/bicing-2021/', Bicing2021App);

@@ -97,3 +97,28 @@ mounted app under negre.co. Key points:
 - `trustedOrigins` in `auth/auth.ts` is the source of truth for which
   origins can use the auth client (production domains + the bicing app's
   local Vite dev server) — update it if a new app/origin needs auth.
+
+## Per-user Bicing settings
+
+`apis/bicing-api` exposes a second, auth-gated entry point (`config-api.ts`,
+separate from its public `index.ts`) mounted here as:
+
+```ts
+app.use('/bicing/api/v2/config', requireAuth, BicingConfigApi);
+```
+
+It must stay **above** the general `app.use('/bicing/api/', BicingApi)` so the
+gate wraps only those routes. `requireAuth` lives here rather than in the API's
+repo, which keeps that repo free of any dependency on the auth instance — the
+router only reads `req.session.user.id`, and returns 401 if it is absent.
+
+That router mounts its own `express.json()` internally. That is the *only*
+JSON parser in this process and it sits below the better-auth handler, as the
+mount-order rule above requires. Do not hoist it.
+
+Storage is `data/bicing.db` (SQLite via `better-sqlite3`, `BICING_DB_PATH`
+override), created on first use beside `data/auth.db`. One JSON document per
+user; see `apis/bicing-api/README.md` for the schema and the reasoning.
+
+`apps/bicing-2026` is the Svelte 5 client for it. Like the other sub-apps it is
+its own repo and gitignored here.
