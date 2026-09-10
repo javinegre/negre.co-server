@@ -13,6 +13,7 @@ const BicingApi = require('./apis/bicing-api/index');
 const BicingConfigApi = require('./apis/bicing-api/config-api');
 
 const BicingApp = express.static(__dirname + '/apps/bicing-2023/dist');
+const Bicing2026App = express.static(__dirname + '/apps/bicing-2026/dist');
 const Bicing2021App = require('./apps/bicing-2021/index');
 const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
@@ -38,6 +39,7 @@ app.use('/files', express.static(__dirname + '/public-files'));
 app.use('/bicing/api/v2/config', requireAuth, BicingConfigApi);
 app.use('/bicing/api/', BicingApi);
 app.use('/bicing/', BicingApp);
+app.use('/bicing-2026/', Bicing2026App);
 app.use('/bicing-2021/', Bicing2021App);
 app.use('/slides/', SlidesApp);
 
