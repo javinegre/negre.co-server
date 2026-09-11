@@ -23,8 +23,12 @@ purpose, this repo only ever tracks the glue that mounts them:
 /files        -> public-files/                (static)
 /bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
 /bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
+/bicing-2026/ -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
+/staging-bicing-2026/
+              -> apps/staging-bicing-2026/dist (static, staging clone of the above; noindex)
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
+/concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
 /             -> apps/home                     (Express, catch-all: /, /des, /cv, 404 handler)
 ```
 
@@ -44,6 +48,17 @@ entirely for those paths — this is additive/reversible, Express's
 `express.static` mounts stay in `server.ts` as a fallback. The `home` app
 (`/`, `/des`, `/cv`, custom 404) stays proxied to Node since it's the
 catch-all route with real routing logic.
+
+**Staging:** `/staging-bicing-2026/` serves a second, hand-deployed clone of
+the `bicing-2026` repo from `apps/staging-bicing-2026/dist`, built on the
+droplet with `BASE_PATH=/staging-bicing-2026/ npm run build`. It stays on this
+origin rather than a `stg.` subdomain because the app hardcodes
+origin-relative auth paths (`/api/auth/get-session`, `/login`) and sends
+`credentials: 'include'` — off negre.co it would silently render signed out
+and the config API would need CORS. It is intentionally *not* given an nginx
+alias: those blocks set `expires 7d`, which would serve a stale `index.html`
+for a week after each rebuild. Public but `noindex`, and it shares
+production's per-user config storage. See `CLAUDE.md` for the full rationale.
 
 **Commands:**
 ```
@@ -128,12 +143,32 @@ File changes:
 
 ## Https
 
-Reference:
+Certs are **Certbot-managed (Let's Encrypt)**, auto-renewing, installed via the
+nginx plugin. The lineage lives at `/etc/letsencrypt/live/negre.co/` and covers
+`negre.co`, `www.negre.co` and `javi.negre.co` — it is **not** a wildcard, so a
+new subdomain needs adding explicitly:
+
+    $ sudo certbot --nginx -d negre.co -d www.negre.co -d javi.negre.co -d <new> --expand
+
+`/.well-known/` is deliberately proxied to Node rather than served by an nginx
+`alias` — Certbot writes ACME HTTP-01 challenges under
+`/.well-known/acme-challenge/` during renewal, and an alias there can shadow
+them and silently break auto-renewal. See the header comment in
+`nginx/negre.co.conf`.
+
+<details>
+<summary>Legacy: commercial CA (Namecheap/Sectigo) setup — no longer used</summary>
+
+The site originally used a purchased cert with manual CSR generation and
+HTTP-based domain validation; `well-known-folder/pki-validation/` is a leftover
+from that flow.
 
 * https://www.digitalocean.com/community/questions/how-do-i-generate-a-csr-key
 * https://www.namecheap.com/support/knowledgebase/article.aspx/794/67/how-do-i-activate-an-ssl-certificate
 * https://www.namecheap.com/support/knowledgebase/article.aspx/10025/68/how-to-complete-httpbased-validation
 * https://www.digitalocean.com/community/tutorials/how-to-install-an-ssl-certificate-from-a-commercial-certificate-authority
+
+</details>
 
 More info:
 * https://www.digitalocean.com/community/tutorials/how-to-set-up-nginx-with-http-2-support-on-ubuntu-18-04

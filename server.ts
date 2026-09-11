@@ -14,9 +14,21 @@ const BicingConfigApi = require('./apis/bicing-api/config-api');
 
 const BicingApp = express.static(__dirname + '/apps/bicing-2023/dist');
 const Bicing2026App = express.static(__dirname + '/apps/bicing-2026/dist');
+// Staging build of bicing-2026, a second clone of that repo deployed by hand.
+// Kept on this origin rather than a stg. subdomain because the app resolves
+// /api/auth/get-session, /api/auth/sign-out and /login as origin-relative
+// literals — off negre.co they 404, and the app silently renders signed out.
+const StagingBicing2026App = express.static(__dirname + '/apps/staging-bicing-2026/dist');
 const Bicing2021App = require('./apps/bicing-2021/index');
 const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
+
+// Staging is reachable without a session so it can be opened from a phone,
+// so keep it out of search results.
+const noIndex: RequestHandler = (_req, res, next) => {
+  res.set('X-Robots-Tag', 'noindex, nofollow');
+  next();
+};
 
 // Must be mounted before any express.json(): Better Auth reads the raw
 // request body itself, and a JSON parser ahead of it leaves the client
@@ -40,6 +52,9 @@ app.use('/bicing/api/v2/config', requireAuth, BicingConfigApi);
 app.use('/bicing/api/', BicingApi);
 app.use('/bicing/', BicingApp);
 app.use('/bicing-2026/', Bicing2026App);
+// Deliberately not given an nginx alias like the apps above: those set
+// `expires 7d`, which would serve a week-old index.html after every rebuild.
+app.use('/staging-bicing-2026/', noIndex, StagingBicing2026App);
 app.use('/bicing-2021/', Bicing2021App);
 app.use('/slides/', SlidesApp);
 

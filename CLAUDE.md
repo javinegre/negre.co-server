@@ -17,8 +17,12 @@ only ever tracks the glue that mounts them, plus the shared auth system.
 /api/auth/*   -> better-auth handler           (Better Auth, see auth/auth.ts)
 /bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
 /bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
+/bicing-2026/ -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
+/staging-bicing-2026/
+              -> apps/staging-bicing-2026/dist (static, staging clone of the above; noindex)
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
+/concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
 /             -> apps/home                     (Express, catch-all: /, /des, /cv, 404 handler)
 ```
 
@@ -65,6 +69,38 @@ hardcoded or committed.
 those paths. This is additive/reversible — the `express.static` mounts stay
 in `server.ts` as a fallback. The `home` app (`/`, `/des`, `/cv`, custom 404)
 stays proxied to Node since it's the catch-all route with real routing logic.
+
+## Staging (`/staging-bicing-2026/`)
+
+A second, hand-deployed clone of the `bicing-2026` repo lives at
+`apps/staging-bicing-2026` on the droplet and is mounted alongside the real
+one. Built there directly:
+
+```
+BASE_PATH=/staging-bicing-2026/ npm run build
+```
+
+Two deliberate choices:
+
+- **It lives on this origin, not a `stg.` subdomain.** The app resolves
+  `/api/auth/get-session`, `/api/auth/sign-out` and `/login` as
+  origin-relative literals with no env override, and its API client uses
+  `credentials: 'include'`. Off negre.co the session fetch 404s — and the
+  client swallows that, rendering permanently signed out — while the config
+  API would need CORS with credentials. On-origin, the session cookie, the
+  passkey RP and the referrer-restricted Maps key all keep working untouched.
+  A subdomain would also imply isolation it wouldn't deliver: same droplet,
+  same PM2 process, same `bicing-api`, same SQLite files.
+- **It gets no nginx alias**, unlike the static apps above. Those blocks set
+  `expires 7d`, which would keep serving a stale `index.html` for a week after
+  each rebuild. Served by Node it revalidates via ETag, so a rebuild is live
+  immediately with no PM2 reload and no `nginx -t`.
+
+It shares production's per-user config document — the same better-auth user id
+hits the same row in `data/bicing.db`, so a staging bug can scribble on real
+settings. Note also that `PUT /bicing/api/v2/config` rejects unknown keys, so
+testing a **new** setting still needs the `bicing-api` change deployed first;
+staging the client does not stage the contract.
 
 ## Auth (Better Auth + passkeys)
 
