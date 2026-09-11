@@ -21,6 +21,19 @@ export const auth = betterAuth({
     'https://javi.negre.co',
     'http://127.0.0.1:5173',
   ],
+  // nginx always overwrites X-Real-IP with its own view of the client
+  // address (unlike X-Forwarded-For, which it appends to instead of
+  // replacing — see nginx/negre.co.conf), so it's a single trustworthy
+  // value with no need for advanced.ipAddress.trustedProxies. Without
+  // this, a request that arrives with its own X-Forwarded-For (routine
+  // for bots/scanners) makes that header multi-valued and unresolvable,
+  // and better-auth's rate limiter falls back to one shared bucket per
+  // path instead of limiting per client IP.
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ['x-real-ip'],
+    },
+  },
   plugins: [
     passkey({
       rpID: process.env.AUTH_RP_ID || 'localhost',
