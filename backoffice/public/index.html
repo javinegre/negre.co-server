@@ -28,8 +28,76 @@
 
   <main>
     <section data-panel="users" hidden>
-      <h2>Users &amp; invites</h2>
-      <div class="empty">Not built yet — phase 1.</div>
+      <div class="stack">
+
+        <section>
+          <div class="shead">
+            <h2>Accounts</h2>
+            <span class="hint" id="users-count"></span>
+          </div>
+          <div id="users-error" class="err" role="alert" hidden></div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40%">Email</th>
+                <th style="width: 14%">Passkeys</th>
+                <th style="width: 24%">Created</th>
+                <th style="width: 22%"></th>
+              </tr>
+            </thead>
+            <tbody id="users-rows">
+              <tr><td colspan="4" class="hint">Loading…</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <div class="shead">
+            <h2>Invite someone</h2>
+            <span class="hint">single use &middot; expires 24h after minting</span>
+          </div>
+          <form id="invite-form" class="row">
+            <input class="in" id="invite-email" type="email" placeholder="name@example.com"
+                   autocomplete="off" required style="width: 320px" />
+            <button class="btn primary" id="invite-submit" type="submit">Mint invite link</button>
+          </form>
+          <div id="invite-error" class="err" role="alert" hidden></div>
+          <div class="panel ok-panel" id="invite-result" hidden>
+            <div class="ph">
+              <span id="invite-result-email"></span>
+              <span class="hint" id="invite-result-expiry"></span>
+            </div>
+            <div class="pb">
+              <div class="row">
+                <code class="grow trunc" id="invite-result-url"></code>
+                <button class="btn" type="button" data-copy="#invite-result-url">Copy</button>
+              </div>
+              <p class="hint">Send it out of band. Registering a passkey with this link creates the account.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="shead">
+            <h2>Pending invites</h2>
+            <span class="hint">unconsumed rows in the verification table</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40%">Email</th>
+                <th style="width: 20%">Minted</th>
+                <th style="width: 18%">Expires</th>
+                <th style="width: 22%"></th>
+              </tr>
+            </thead>
+            <tbody id="invite-rows">
+              <tr><td colspan="4" class="hint">Loading…</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+      </div>
     </section>
 
     <section data-panel="apps" hidden>
@@ -47,6 +115,23 @@
       <div class="empty">Not built yet — phase 4.</div>
     </section>
   </main>
+
+  <dialog id="confirm">
+    <form method="dialog" class="confirm-body">
+      <div class="confirm-head">
+        <strong id="confirm-title"></strong>
+        <p class="hint" id="confirm-detail"></p>
+      </div>
+      <div class="confirm-field">
+        <label class="hint" for="confirm-input">Type <code id="confirm-phrase"></code> to confirm</label>
+        <input class="in" id="confirm-input" autocomplete="off" />
+      </div>
+      <div class="confirm-actions">
+        <button class="btn" value="cancel" type="submit">Cancel</button>
+        <button class="btn danger" value="go" id="confirm-go" type="submit" disabled>Delete</button>
+      </div>
+    </form>
+  </dialog>
 
   <script type="module" src="/backoffice/client.js"></script>
 </body>

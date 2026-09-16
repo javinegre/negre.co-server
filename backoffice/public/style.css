@@ -209,3 +209,58 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
   color: var(--muted);
   text-align: center;
 }
+
+/* ---- phase 1: users & invites ---- */
+
+.stack { display: flex; flex-direction: column; gap: 24px; }
+.row { display: flex; align-items: center; gap: 8px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Goes on a div inside the <td>, never on the cell itself: display:flex on a
+   <td> overrides display:table-cell, so the column stops obeying the <th>
+   widths and the row borders no longer line up. */
+.cell-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+.err {
+  font-size: 12px;
+  color: var(--danger);
+  border: 1px solid color-mix(in oklab, var(--danger) 35%, Canvas);
+  background: color-mix(in oklab, var(--danger) 7%, Canvas);
+  border-radius: 0.5rem;
+  padding: 8px 11px;
+}
+
+.ok-panel { border-color: color-mix(in oklab, var(--ok) 40%, Canvas); }
+.ok-panel > .ph { background: color-mix(in oklab, var(--ok) 8%, Canvas); color: var(--ok); }
+
+code.grow {
+  padding: 8px 10px;
+  background: var(--sunken);
+  border-radius: 0.375rem;
+}
+
+/* ---- confirm dialog ---- */
+
+dialog {
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.5rem;
+  padding: 0;
+  background: Canvas;
+  color: CanvasText;
+  width: min(460px, calc(100vw - 32px));
+}
+dialog::backdrop { background: light-dark(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.6)); }
+
+.confirm-body { display: flex; flex-direction: column; }
+.confirm-head { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 9px; }
+.confirm-head strong { font-size: 15px; }
+.confirm-field { padding: 14px 18px; display: flex; flex-direction: column; gap: 7px; }
+.confirm-actions {
+  padding: 12px 18px;
+  border-top: 1px solid var(--rule);
+  background: var(--sunken);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
