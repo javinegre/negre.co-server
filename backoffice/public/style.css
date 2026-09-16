@@ -270,3 +270,33 @@ dialog::backdrop { background: light-dark(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.6
 .cell-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .mount-line { display: flex; align-items: center; gap: 6px; }
 .ref { display: inline-flex; align-items: baseline; gap: 6px; }
+
+/* ---- phase 3: per-user app data ---- */
+
+.split { display: flex; gap: 20px; align-items: flex-start; }
+.split-side { width: 280px; flex: none; }
+.split-main { flex: 1 1 auto; min-width: 0; }
+
+.list { display: flex; flex-direction: column; }
+.list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  color: CanvasText;
+  width: 100%;
+}
+.list-row:last-child { border-bottom: 0; }
+.list-row:hover { background: var(--sunken); }
+.list-row[aria-selected='true'] { background: var(--sunken); font-weight: 600; }
+.list-row .hint { font-weight: 400; }
+
+.doc { color: CanvasText; line-height: 1.75; white-space: pre-wrap; max-height: 460px; overflow: auto; }

@@ -473,6 +473,110 @@ async function loadApps() {
   }
 }
 
+/* ---- per-user app data ---- */
+
+interface ConfigEntry {
+  userId: string;
+  email: string | null;
+  config: unknown;
+  raw: string | null;
+  updatedAt: number;
+  bytes: number;
+}
+
+interface AppData {
+  store: {
+    path: string;
+    present: boolean;
+    error: string | null;
+    entries: ConfigEntry[];
+  };
+  withoutRow: { userId: string; email: string }[];
+}
+
+function stamp(ms: number): string {
+  if (!ms) return 'never';
+  return new Date(ms).toISOString().slice(0, 16).replace('T', ' ');
+}
+
+function listRow(label: string, sub: string, onSelect: () => void): HTMLButtonElement {
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'list-row';
+  const top = document.createElement('span');
+  top.textContent = label;
+  const bottom = document.createElement('span');
+  bottom.className = 'hint';
+  bottom.textContent = sub;
+  row.append(top, bottom);
+  row.addEventListener('click', () => {
+    for (const other of document.querySelectorAll('.list-row')) {
+      other.removeAttribute('aria-selected');
+    }
+    row.setAttribute('aria-selected', 'true');
+    onSelect();
+  });
+  return row;
+}
+
+function showDocument(entry: ConfigEntry) {
+  const doc = el('data-doc');
+  const meta = el('data-meta');
+  if (!doc || !meta) return;
+
+  meta.textContent = `${entry.email ?? entry.userId} · updated ${stamp(entry.updatedAt)} · ${entry.bytes} B`;
+  doc.textContent = entry.raw !== null
+    ? entry.raw
+    : JSON.stringify(entry.config, null, 2);
+}
+
+async function loadAppData() {
+  const list = el('data-list');
+  if (!list) return;
+
+  try {
+    const { store, withoutRow } = await call<AppData>('/app-data');
+    setError('data-error', store.error);
+
+    const pathNote = el('data-path');
+    if (pathNote) {
+      pathNote.textContent = store.present
+        ? store.path
+        : `${store.path} — not created yet; bicing-api makes it on first save.`;
+    }
+
+    list.replaceChildren();
+
+    for (const entry of store.entries) {
+      const label = entry.email ?? 'orphaned row';
+      const bits = [stamp(entry.updatedAt)];
+      if (entry.raw !== null) bits.push('unparseable');
+      if (!entry.email) bits.push('no matching user');
+      list.append(listRow(label, bits.join(' · '), () => showDocument(entry)));
+    }
+
+    for (const user of withoutRow) {
+      const row = listRow(user.email, 'never saved', () => {
+        const doc = el('data-doc');
+        const meta = el('data-meta');
+        if (meta) meta.textContent = `${user.email} · no row`;
+        if (doc) doc.textContent = 'No stored document. bicing-api serves defaults for this user.';
+      });
+      list.append(row);
+    }
+
+    if (!list.childElementCount) {
+      const empty = document.createElement('div');
+      empty.className = 'list-row hint';
+      empty.textContent = 'No accounts.';
+      list.append(empty);
+    }
+  } catch (err) {
+    setError('data-error', (err as Error).message);
+    list.replaceChildren();
+  }
+}
+
 /**
  * One session read, used for two things: naming the account in the header, and
  * knowing which row is your own so it offers no Delete button. requireAdmin has
@@ -493,7 +597,7 @@ async function init() {
   const header = el('admin-email');
   if (header && currentEmail) header.textContent = currentEmail;
 
-  await Promise.all([loadUsers(), loadInvites(), loadApps()]);
+  await Promise.all([loadUsers(), loadInvites(), loadApps(), loadAppData()]);
 }
 
 init();
