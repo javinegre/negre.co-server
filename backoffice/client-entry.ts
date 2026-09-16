@@ -351,6 +351,7 @@ interface AppStatus {
   uncommitted: number | null;
   build: { path: string; builtAt: string | null } | null;
   hasDeployScript: boolean;
+  deployReady: boolean;
 }
 
 function pill(text: string, tone?: 'ok' | 'warn' | 'bad', withDot = true): HTMLSpanElement {
@@ -460,9 +461,11 @@ async function loadApps() {
 
       const kind = cell(app.kind === 'placeholder' ? '\u2014' : app.kind, 'hint');
 
-      const deploy = app.hasDeployScript
+      const deploy = app.deployReady
         ? cell('deploy.sh', 'hint')
-        : cell(app.present ? 'no deploy.sh' : '\u2014', 'hint');
+        : app.hasDeployScript
+          ? cell('not executable', 'hint')
+          : cell(app.present ? 'no deploy.sh' : '\u2014', 'hint');
 
       tr.append(name, mountCell(app), kind, checkoutCell(app), buildCell(app), deploy);
       tbody.append(tr);
@@ -577,6 +580,301 @@ async function loadAppData() {
   }
 }
 
+/* ---- process control ---- */
+
+interface Pm2Process {
+  name: string;
+  status: string;
+  pid: number | null;
+  uptimeMs: number | null;
+  restarts: number | null;
+  memoryBytes: number | null;
+  cpu: number | null;
+  execMode: string | null;
+  instances: number | null;
+}
+
+interface DeployJob {
+  id: string;
+  key: string;
+  status: 'running' | 'succeeded' | 'failed';
+  startedAt: number;
+  finishedAt: number | null;
+  exitCode: number | null;
+  output: string;
+  truncated: boolean;
+  error: string | null;
+}
+
+function duration(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}h ${m % 60}m` : `${Math.floor(h / 24)}d ${h % 24}h`;
+}
+
+function stat(label: string, value: Node | string): HTMLDivElement {
+  const box = document.createElement('div');
+  box.className = 'stat';
+  const top = document.createElement('span');
+  top.className = 'hint';
+  top.textContent = label;
+  const bottom = document.createElement('span');
+  bottom.className = 'num';
+  bottom.append(value);
+  box.append(top, bottom);
+  return box;
+}
+
+async function loadPm2() {
+  const body = el('pm2-body');
+  const meta = el('pm2-meta');
+  if (!body) return;
+
+  try {
+    const status = await call<{ available: boolean; processes: Pm2Process[]; error: string | null }>(
+      '/pm2/status',
+    );
+    // pm2 simply not being installed is a configuration state, not a fault, and
+    // the panel says so in place — the red banner is for errors that need one
+    // (jlist returning something unparseable, a command that failed).
+    setError('pm2-error', status.available ? status.error : null);
+
+    body.replaceChildren();
+    if (!status.available || status.processes.length === 0) {
+      const note = document.createElement('span');
+      note.className = 'hint';
+      note.textContent = status.available
+        ? 'pm2 is available but reported no processes.'
+        : 'Process control needs pm2 on the router’s PATH.';
+      body.append(note);
+      if (meta) meta.textContent = '';
+      return;
+    }
+
+    for (const proc of status.processes) {
+      const head = document.createElement('div');
+      head.className = 'deploy-head';
+
+      const left = document.createElement('div');
+      left.className = 'stats';
+      const name = document.createElement('div');
+      name.className = 'stat';
+      const nameTop = document.createElement('strong');
+      nameTop.textContent = proc.name;
+      const nameSub = document.createElement('span');
+      nameSub.className = 'hint';
+      nameSub.textContent = [proc.execMode, proc.instances ? `${proc.instances} instance` : null]
+        .filter(Boolean)
+        .join(' · ');
+      name.append(nameTop, nameSub);
+      left.append(name);
+
+      left.append(stat('Status', pill(proc.status, proc.status === 'online' ? 'ok' : 'bad')));
+      if (proc.uptimeMs !== null) left.append(stat('Uptime', duration(proc.uptimeMs)));
+      if (proc.restarts !== null) left.append(stat('Restarts', String(proc.restarts)));
+      if (proc.memoryBytes !== null) {
+        left.append(stat('Memory', `${Math.round(proc.memoryBytes / 1048576)} MB`));
+      }
+      if (proc.cpu !== null) left.append(stat('CPU', `${proc.cpu}%`));
+
+      const reload = document.createElement('button');
+      reload.className = 'btn';
+      reload.textContent = 'Reload';
+      reload.addEventListener('click', () => doReload(reload));
+
+      head.append(left, reload);
+      body.append(head);
+    }
+    if (meta) meta.textContent = '';
+  } catch (err) {
+    setError('pm2-error', (err as Error).message);
+  }
+}
+
+async function doReload(button: HTMLButtonElement) {
+  const ok = await confirmPhrase(
+    'Reload negre-co-server?',
+    'Restarts the router that is serving this page. Every mounted app goes down for a moment, and this session reconnects when it returns.',
+    'reload',
+  );
+  if (!ok) return;
+
+  button.disabled = true;
+  const banner = el('reload-banner');
+  const detail = el('reload-detail');
+  const title = el('reload-title');
+
+  try {
+    await call('/pm2/reload', { method: 'POST' });
+  } catch (err) {
+    setError('pm2-error', (err as Error).message);
+    button.disabled = false;
+    return;
+  }
+
+  if (banner) banner.hidden = false;
+  const startedAt = Date.now();
+
+  // The 202 only says the reload was accepted — this process is about to be
+  // replaced, so health is the only thing that can confirm it came back.
+  const poll = window.setInterval(async () => {
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    if (detail) detail.textContent = `Polling /backoffice/api/health · ${elapsed}s elapsed`;
+
+    try {
+      const res = await fetch(`${API}/health`, { credentials: 'include', cache: 'no-store' });
+      if (!res.ok) return;
+    } catch {
+      return; // still down, keep waiting
+    }
+
+    // Only trust a health check that arrives after the process actually went
+    // away; an immediate 200 is the old process answering before pm2 kills it.
+    if (Date.now() - startedAt < 2000) return;
+
+    window.clearInterval(poll);
+    if (title) title.textContent = 'Back up';
+    if (detail) detail.textContent = `Returned after ${elapsed}s`;
+    button.disabled = false;
+    window.setTimeout(() => {
+      if (banner) banner.hidden = true;
+      if (title) title.textContent = 'Reloading — waiting for the server to come back';
+      void loadPm2();
+    }, 2500);
+  }, 1000);
+}
+
+async function loadLogs() {
+  const body = el('log-body');
+  const select = el<HTMLSelectElement>('log-lines');
+  if (!body) return;
+
+  body.textContent = 'Loading…';
+  try {
+    const result = await call<{ available: boolean; text: string; error: string | null }>(
+      `/logs?lines=${encodeURIComponent(select?.value ?? '200')}`,
+    );
+    body.textContent =
+      result.text.trim() ||
+      result.error ||
+      (result.available ? 'No output.' : 'pm2 is not on the router’s PATH.');
+  } catch (err) {
+    body.textContent = (err as Error).message;
+  }
+}
+
+const deployJobs = new Map<string, DeployJob>();
+
+async function loadDeploys() {
+  const list = el('deploy-list');
+  if (!list) return;
+
+  try {
+    const { apps } = await call<{ apps: AppStatus[] }>('/apps');
+    list.replaceChildren();
+
+    for (const app of apps.filter((a) => a.deployReady)) {
+      const row = document.createElement('div');
+      row.className = 'deploy-row';
+      row.dataset.key = app.key;
+
+      const head = document.createElement('div');
+      head.className = 'deploy-head';
+      const name = document.createElement('span');
+      name.textContent = app.name;
+      const button = document.createElement('button');
+      button.className = 'btn sm';
+      button.textContent = 'Deploy';
+      button.addEventListener('click', () => startDeploy(app, row, button));
+      head.append(name, button);
+      row.append(head);
+      list.append(row);
+    }
+
+    if (!list.childElementCount) {
+      const empty = document.createElement('div');
+      empty.className = 'list-row hint';
+      empty.textContent = 'No app here has a deploy.sh.';
+      list.append(empty);
+    }
+  } catch (err) {
+    setError('deploy-error', (err as Error).message);
+  }
+}
+
+async function startDeploy(app: AppStatus, row: HTMLElement, button: HTMLButtonElement) {
+  const ok = await confirmPhrase(
+    `Deploy ${app.name}?`,
+    `Runs that repo's own deploy.sh on the droplet. It pulls, builds, and replaces what is currently served at ${app.mounts.join(', ')}.`,
+    app.name,
+  );
+  if (!ok) return;
+
+  button.disabled = true;
+  setError('deploy-error', null);
+
+  try {
+    const { job } = await call<{ job: DeployJob }>(`/deploy/${encodeURIComponent(app.key)}`, {
+      method: 'POST',
+    });
+    deployJobs.set(app.key, job);
+    followJob(job, row, button);
+  } catch (err) {
+    setError('deploy-error', (err as Error).message);
+    button.disabled = false;
+  }
+}
+
+function renderJob(job: DeployJob, row: HTMLElement) {
+  let out = row.querySelector<HTMLPreElement>('.deploy-out');
+  if (!out) {
+    out = document.createElement('pre');
+    out.className = 'deploy-out';
+    row.append(out);
+  }
+  out.textContent = job.output || '(no output yet)';
+  out.scrollTop = out.scrollHeight;
+
+  let badge = row.querySelector<HTMLElement>('.deploy-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'deploy-badge';
+    row.querySelector('.deploy-head')?.insertBefore(badge, row.querySelector('.deploy-head button'));
+  }
+  badge.replaceChildren(
+    job.status === 'running'
+      ? pill(`running ${duration(Date.now() - job.startedAt)}`, 'warn')
+      : job.status === 'succeeded'
+        ? pill('succeeded', 'ok')
+        : pill(job.error ?? `failed (exit ${job.exitCode})`, 'bad'),
+  );
+}
+
+function followJob(job: DeployJob, row: HTMLElement, button: HTMLButtonElement) {
+  renderJob(job, row);
+  const poll = window.setInterval(async () => {
+    try {
+      const fresh = await call<{ job: DeployJob }>(`/deploy/${encodeURIComponent(job.id)}`);
+      renderJob(fresh.job, row);
+      if (fresh.job.status !== 'running') {
+        window.clearInterval(poll);
+        button.disabled = false;
+        void loadApps();
+      }
+    } catch {
+      // A reload mid-deploy loses the job; stop polling rather than spin.
+      window.clearInterval(poll);
+      button.disabled = false;
+    }
+  }, 1500);
+}
+
+el('log-refresh')?.addEventListener('click', () => void loadLogs());
+el('log-lines')?.addEventListener('change', () => void loadLogs());
+
 /**
  * One session read, used for two things: naming the account in the header, and
  * knowing which row is your own so it offers no Delete button. requireAdmin has
@@ -597,7 +895,15 @@ async function init() {
   const header = el('admin-email');
   if (header && currentEmail) header.textContent = currentEmail;
 
-  await Promise.all([loadUsers(), loadInvites(), loadApps(), loadAppData()]);
+  await Promise.all([
+    loadUsers(),
+    loadInvites(),
+    loadApps(),
+    loadAppData(),
+    loadPm2(),
+    loadLogs(),
+    loadDeploys(),
+  ]);
 }
 
 init();

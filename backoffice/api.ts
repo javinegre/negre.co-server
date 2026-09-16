@@ -3,7 +3,14 @@ import type { Request, RequestHandler } from 'express';
 import { auth } from '../auth/auth';
 import { INVITE_PREFIX, createInvite, inviteUrl } from '../auth/invites';
 import { readConfigStore } from './bicing';
-import { appStatuses } from './ops';
+import {
+  appStatuses,
+  getJob,
+  pm2Logs,
+  pm2Status,
+  scheduleReload,
+  startDeploy,
+} from './ops';
 import { requireSameOrigin } from './require-same-origin';
 
 export const api: Router = Router();
@@ -213,4 +220,62 @@ api.get('/app-data', async (_req, res) => {
     .map((user) => ({ userId: user.id, email: user.email }));
 
   res.json({ store, withoutRow });
+});
+
+/* ---- process control ---- */
+
+api.get('/pm2/status', async (_req, res) => {
+  res.json(await pm2Status());
+});
+
+api.get('/logs', async (req, res) => {
+  const lines = Number(req.query.lines);
+  res.json(await pm2Logs(Number.isFinite(lines) ? lines : 200));
+});
+
+api.post('/pm2/reload', requireSameOrigin, async (req, res) => {
+  // Check pm2 answers BEFORE accepting: once this responds 202 the UI waits
+  // for a process that will never restart, with nothing to show for it.
+  const status = await pm2Status();
+  if (!status.available) {
+    audit(req, 'pm2.reload', 'negre-co-server', 'unavailable');
+    res.status(503).json({ error: status.error ?? 'pm2 is unavailable' });
+    return;
+  }
+
+  audit(req, 'pm2.reload', 'negre-co-server', 'accepted');
+  // 202, not 200: the work happens after the response, and this process does
+  // not survive to report on it. The client confirms via /api/health.
+  res.status(202).json({ ok: true });
+  scheduleReload();
+});
+
+api.post('/deploy/:key', requireSameOrigin, async (req, res) => {
+  const { key } = req.params;
+  const result = await startDeploy(key);
+
+  if (!result.ok) {
+    const messages: Record<typeof result.reason, [number, string]> = {
+      'unknown-app': [404, 'No such app'],
+      'no-script': [400, 'That app has no deploy.sh'],
+      'not-executable': [400, 'deploy.sh is not executable'],
+      'already-running': [409, 'A deploy for that app is already running'],
+    };
+    const [status, message] = messages[result.reason];
+    audit(req, 'deploy.start', key, result.reason);
+    res.status(status).json({ error: message });
+    return;
+  }
+
+  audit(req, 'deploy.start', key, `job ${result.job.id}`);
+  res.status(202).json({ job: result.job });
+});
+
+api.get('/deploy/:id', (req, res) => {
+  const job = getJob(req.params.id);
+  if (!job) {
+    res.status(404).json({ error: 'No such job' });
+    return;
+  }
+  res.json({ job });
 });
