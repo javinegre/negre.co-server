@@ -335,6 +335,144 @@ document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((button) => 
   });
 });
 
+/* ---- apps & APIs ---- */
+
+interface AppStatus {
+  key: string;
+  name: string;
+  mounts: string[];
+  kind: 'static' | 'express' | 'placeholder';
+  nginx: boolean;
+  note: string | null;
+  present: boolean;
+  isRepo: boolean;
+  branch: string | null;
+  sha: string | null;
+  uncommitted: number | null;
+  build: { path: string; builtAt: string | null } | null;
+  hasDeployScript: boolean;
+}
+
+function pill(text: string, tone?: 'ok' | 'warn' | 'bad', withDot = true): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = tone ? `pill ${tone}` : 'pill';
+  // The dot marks a live state; static labels (nginx, gated) carry none.
+  if (withDot) {
+    const dot = document.createElement('i');
+    dot.className = 'dot';
+    span.append(dot);
+  }
+  span.append(text);
+  return span;
+}
+
+function stacked(...nodes: (Node | string)[]): HTMLDivElement {
+  const box = document.createElement('div');
+  box.className = 'cell-stack';
+  box.append(...nodes);
+  return box;
+}
+
+function mountCell(app: AppStatus): HTMLTableCellElement {
+  const td = document.createElement('td');
+  const box = stacked();
+  for (const mount of app.mounts) {
+    const line = document.createElement('span');
+    line.className = 'mount-line';
+    const code = document.createElement('span');
+    code.className = 'path';
+    code.textContent = mount;
+    line.append(code);
+    if (mount.includes('/v2/config')) line.append(pill('gated', undefined, false));
+    box.append(line);
+  }
+  if (app.nginx) box.append(pill('nginx', undefined, false));
+  td.append(box);
+  return td;
+}
+
+function checkoutCell(app: AppStatus): HTMLTableCellElement {
+  const td = document.createElement('td');
+
+  if (!app.present) {
+    td.append(pill('not checked out'));
+    return td;
+  }
+  if (!app.isRepo) {
+    td.append(pill('not a git checkout'));
+    return td;
+  }
+
+  const ref = document.createElement('span');
+  ref.className = 'ref';
+  const branch = document.createElement('span');
+  branch.className = 'mono';
+  branch.textContent = app.branch ?? 'detached';
+  const sha = document.createElement('span');
+  sha.className = 'path';
+  sha.textContent = app.sha ?? '';
+  ref.append(branch, sha);
+
+  const state =
+    app.uncommitted === null
+      ? pill('unknown')
+      : app.uncommitted === 0
+        ? pill('clean')
+        : pill(`${app.uncommitted} uncommitted`, 'warn');
+
+  td.append(stacked(ref, state));
+  return td;
+}
+
+function buildCell(app: AppStatus): HTMLTableCellElement {
+  if (!app.build) return cell('\u2014', 'hint');
+  if (!app.build.builtAt) return cell('not built', 'hint');
+  const td = cell(new Date(app.build.builtAt).toISOString().slice(0, 16).replace('T', ' '), 'num');
+  td.style.color = 'var(--muted)';
+  return td;
+}
+
+async function loadApps() {
+  const tbody = el('apps-rows');
+  if (!tbody) return;
+
+  try {
+    const { apps } = await call<{ apps: AppStatus[] }>('/apps');
+    setError('apps-error', null);
+
+    tbody.replaceChildren();
+    for (const app of apps) {
+      const tr = document.createElement('tr');
+      if (!app.present) tr.className = 'dim';
+
+      const name = document.createElement('td');
+      const nameBox = stacked();
+      const label = document.createElement('span');
+      label.textContent = app.name;
+      nameBox.append(label);
+      if (app.note) {
+        const note = document.createElement('span');
+        note.className = 'hint';
+        note.textContent = app.note;
+        nameBox.append(note);
+      }
+      name.append(nameBox);
+
+      const kind = cell(app.kind === 'placeholder' ? '\u2014' : app.kind, 'hint');
+
+      const deploy = app.hasDeployScript
+        ? cell('deploy.sh', 'hint')
+        : cell(app.present ? 'no deploy.sh' : '\u2014', 'hint');
+
+      tr.append(name, mountCell(app), kind, checkoutCell(app), buildCell(app), deploy);
+      tbody.append(tr);
+    }
+  } catch (err) {
+    setError('apps-error', (err as Error).message);
+    message(tbody, 6, 'Could not load app status.');
+  }
+}
+
 /**
  * One session read, used for two things: naming the account in the header, and
  * knowing which row is your own so it offers no Delete button. requireAdmin has
@@ -355,7 +493,7 @@ async function init() {
   const header = el('admin-email');
   if (header && currentEmail) header.textContent = currentEmail;
 
-  await Promise.all([loadUsers(), loadInvites()]);
+  await Promise.all([loadUsers(), loadInvites(), loadApps()]);
 }
 
 init();

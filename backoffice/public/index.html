@@ -101,8 +101,30 @@
     </section>
 
     <section data-panel="apps" hidden>
-      <h2>Apps &amp; APIs</h2>
-      <div class="empty">Not built yet — phase 2.</div>
+      <div class="shead">
+        <h2>Mounted apps &amp; APIs</h2>
+        <span class="hint">read-only &middot; each row is its own git repo, deployed independently</span>
+      </div>
+      <div id="apps-error" class="err" role="alert" hidden></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 19%">App</th>
+            <th style="width: 22%">Mount</th>
+            <th style="width: 10%">Kind</th>
+            <th style="width: 21%">Checked out</th>
+            <th style="width: 16%">Build output</th>
+            <th style="width: 12%">Deploy</th>
+          </tr>
+        </thead>
+        <tbody id="apps-rows">
+          <tr><td colspan="6" class="hint">Loading…</td></tr>
+        </tbody>
+      </table>
+      <p class="hint">
+        A missing directory is normal, not a fault &mdash; <code>apps/</code> and
+        <code>apis/</code> are gitignored, so nothing here exists in a fresh clone.
+      </p>
     </section>
 
     <section data-panel="data" hidden>
