@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import type { Request, RequestHandler } from 'express';
 import { auth } from '../auth/auth';
 import { INVITE_PREFIX, createInvite, inviteUrl } from '../auth/invites';
+import { appStatuses } from './ops';
 import { requireSameOrigin } from './require-same-origin';
 
 export const api: Router = Router();
@@ -186,4 +187,9 @@ api.delete('/users/:id', requireSameOrigin, async (req, res) => {
 
   audit(req, 'user.delete', email, 'ok');
   res.json({ ok: true });
+});
+
+api.get('/apps', async (_req, res) => {
+  // Read-only: shells out to git, never writes. Deploying is phase 4.
+  res.json({ apps: await appStatuses() });
 });

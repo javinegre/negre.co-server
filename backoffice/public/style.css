@@ -264,3 +264,9 @@ dialog::backdrop { background: light-dark(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.6
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* ---- phase 2: apps & APIs ---- */
+
+.cell-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.mount-line { display: flex; align-items: center; gap: 6px; }
+.ref { display: inline-flex; align-items: baseline; gap: 6px; }

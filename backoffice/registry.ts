@@ -73,7 +73,7 @@ export const registry: RegistryEntry[] = [
     mounts: ['/staging-bicing-2026/'],
     kind: 'static',
     build: 'dist',
-    note: 'Second clone of bicing-2026, built by hand with BASE_PATH set. No deploy.sh.',
+    note: 'Second clone of bicing-2026, built by hand with BASE_PATH set.',
   },
   {
     key: 'bicing-2021',
