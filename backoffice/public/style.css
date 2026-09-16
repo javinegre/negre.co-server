@@ -1,0 +1,211 @@
+/*
+ * Extends the vocabulary of auth/public/index.html: system-ui, 0.5rem radii,
+ * and the Canvas / CanvasText system colours so light and dark follow the OS
+ * with no toggle and no stored preference. Everything derived from that pair —
+ * rules, muted text, sunken fills, status colours — uses light-dark(), which
+ * needs the color-scheme declaration below to resolve.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --rule:        light-dark(#e6e4e0, #33322f);
+  --rule-strong: light-dark(#c9c6c0, #4d4b47);
+  --muted:       light-dark(#6b6862, #9d9a94);
+  --sunken:      light-dark(#f6f5f2, #1b1a19);
+
+  --danger:      light-dark(#c0392b, #e0614f);
+  --ok:          light-dark(#2f7d4f, #4fb37a);
+  --warn:        light-dark(#8a6206, #d9a441);
+  --link:        light-dark(#2a5da8, #79a9e8);
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  background: Canvas;
+  color: CanvasText;
+}
+
+a { color: var(--link); text-underline-offset: 2px; }
+a:hover { color: color-mix(in oklab, var(--link) 65%, CanvasText); }
+
+p { margin: 0; }
+
+[hidden] { display: none !important; }
+
+/* ---- chrome ---- */
+
+.hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+  height: 52px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.brand span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.who { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+.who .em { color: CanvasText; }
+
+/* A button, not a link: better-auth's sign-out is POST-only (GET 404s). */
+.signout {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.signout:hover { color: CanvasText; }
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--rule);
+}
+.tabs a {
+  padding: 9px 12px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tabs a:hover { color: CanvasText; }
+.tabs a[aria-current='page'] {
+  color: CanvasText;
+  font-weight: 600;
+  border-bottom-color: CanvasText;
+}
+
+main { padding: 20px; display: flex; flex-direction: column; gap: 24px; }
+
+section { display: flex; flex-direction: column; gap: 10px; }
+
+.shead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+
+h2 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.hint { font-size: 11px; color: var(--muted); }
+
+/* ---- primitives ---- */
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  padding: 0 10px 7px;
+  border-bottom: 1px solid var(--rule);
+}
+td { padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+tr.dim td { color: var(--muted); }
+
+.num { font-variant-numeric: tabular-nums; }
+.r { text-align: right; }
+
+.btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 11px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rule-strong);
+  background: Canvas;
+  color: CanvasText;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { border-color: CanvasText; }
+.btn.primary { background: CanvasText; color: Canvas; border-color: CanvasText; }
+.btn.danger { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 45%, Canvas); }
+.btn.sm { padding: 4px 8px; font-size: 11px; border-radius: 0.375rem; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.in {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 9px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rule-strong);
+  background: Canvas;
+  color: CanvasText;
+}
+.in::placeholder { color: var(--muted); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* The dot marks a live state. Static labels (nginx, gated) carry none. */
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.ok   { color: var(--ok);     border-color: color-mix(in oklab, var(--ok) 35%, Canvas); }
+.pill.warn { color: var(--warn);   border-color: color-mix(in oklab, var(--warn) 40%, Canvas); }
+.pill.bad  { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 40%, Canvas); }
+
+code, .mono { font-family: var(--mono); font-size: 12px; }
+.path { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+.panel { border: 1px solid var(--rule); border-radius: 0.5rem; overflow: hidden; }
+.panel > .ph {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sunken);
+  font-size: 12px;
+  font-weight: 600;
+}
+.panel > .pb { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.empty {
+  border: 1px dashed var(--rule-strong);
+  border-radius: 0.5rem;
+  padding: 44px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-align: center;
+}

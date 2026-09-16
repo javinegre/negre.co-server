@@ -1,0 +1,15 @@
+{
+  // Browser entry points, bundled by esbuild into each public/client.js.
+  //
+  // Separate from tsconfig.json so the DOM lib stays out of the server's
+  // scope: with it there, server.ts could reference `document` and still
+  // typecheck. The base config excludes these files for the same reason.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2022", "dom", "dom.iterable"]
+  },
+  "include": ["auth/client-entry.ts", "backoffice/client-entry.ts"],
+  // "exclude" is inherited from the base config, where it drops exactly
+  // these files. Clear it, or this project has no inputs at all.
+  "exclude": []
+}

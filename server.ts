@@ -2,6 +2,8 @@ import { Express, RequestHandler } from 'express';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth/auth';
 import { requireAuth } from './auth/require-auth';
+import { requireAdmin } from './auth/require-admin';
+import { backoffice } from './backoffice';
 
 const express = require('express');
 const app: Express = express();
@@ -69,6 +71,10 @@ app.get('/concept-app/', requireAuth, (req, res) => {
     'This is a placeholder route — replace with the real concept-app once its repo exists.',
   );
 });
+
+// Admin-only, and kept out of search results like the staging app above.
+// requireAdmin must follow requireAuth: it reads the session requireAuth sets.
+app.use('/backoffice', noIndex, requireAuth, requireAdmin, backoffice);
 
 app.use('/', HomeApp);
 

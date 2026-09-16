@@ -8,3 +8,4 @@ node_modules/
 .env
 data/
 auth/public/client.js
+backoffice/public/client.js

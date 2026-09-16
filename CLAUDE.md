@@ -23,6 +23,7 @@ only ever tracks the glue that mounts them, plus the shared auth system.
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
 /concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
+/backoffice/  -> backoffice/public/            (admin-only, ADMIN_EMAILS allowlist)
 /             -> apps/home                     (Express, catch-all: /, /des, /cv, 404 handler)
 ```
 
