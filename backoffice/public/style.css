@@ -300,3 +300,37 @@ dialog::backdrop { background: light-dark(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.6
 .list-row .hint { font-weight: 400; }
 
 .doc { color: CanvasText; line-height: 1.75; white-space: pre-wrap; max-height: 460px; overflow: auto; }
+
+/* ---- phase 4: process control ---- */
+
+.warn-panel { border-color: color-mix(in oklab, var(--warn) 40%, Canvas); }
+.reload-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: color-mix(in oklab, var(--warn) 7%, Canvas);
+}
+.reload-row svg { color: var(--warn); flex: none; }
+
+.stats { display: flex; gap: 26px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 3px; }
+
+.sel { padding: 4px 8px; font-size: 12px; }
+
+.deploy-row { display: flex; flex-direction: column; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+.deploy-row:last-child { border-bottom: 0; }
+.deploy-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.deploy-out {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  background: Canvas;
+  border: 1px solid var(--rule);
+  border-radius: 0.375rem;
+  padding: 8px 10px;
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
