@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import type { Request, RequestHandler } from 'express';
 import { auth } from '../auth/auth';
 import { INVITE_PREFIX, createInvite, inviteUrl } from '../auth/invites';
+import { readConfigStore } from './bicing';
 import { appStatuses } from './ops';
 import { requireSameOrigin } from './require-same-origin';
 
@@ -192,4 +193,24 @@ api.delete('/users/:id', requireSameOrigin, async (req, res) => {
 api.get('/apps', async (_req, res) => {
   // Read-only: shells out to git, never writes. Deploying is phase 4.
   res.json({ apps: await appStatuses() });
+});
+
+api.get('/app-data', async (_req, res) => {
+  const ctx = await auth.$context;
+  const users = await ctx.internalAdapter.listUsers(500, 0, {
+    field: 'createdAt',
+    direction: 'desc',
+  });
+
+  const emails = new Map(users.map((user) => [user.id, user.email]));
+  const store = readConfigStore(emails);
+
+  // Accounts with no row at all: bicing-api returns defaults for them, so
+  // "never saved" is a real state rather than missing data.
+  const withRow = new Set(store.entries.map((entry) => entry.userId));
+  const withoutRow = users
+    .filter((user) => !withRow.has(user.id))
+    .map((user) => ({ userId: user.id, email: user.email }));
+
+  res.json({ store, withoutRow });
 });

@@ -128,8 +128,47 @@
     </section>
 
     <section data-panel="data" hidden>
-      <h2>App data</h2>
-      <div class="empty">Not built yet — phase 3.</div>
+      <div class="stack">
+
+        <div class="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>
+            Production and <code>/staging-bicing-2026/</code> read and write the
+            <strong>same rows</strong> &mdash; one better-auth user id, one document in
+            <code>data/bicing.db</code>. A staging bug scribbles on real settings.
+          </span>
+        </div>
+
+        <div id="data-error" class="err" role="alert" hidden></div>
+
+        <div class="split">
+          <section class="split-side">
+            <div class="shead">
+              <h2>Bicing config</h2>
+            </div>
+            <div class="panel"><div id="data-list" class="list">
+              <div class="list-row hint">Loading…</div>
+            </div></div>
+            <p class="hint" id="data-path"></p>
+          </section>
+
+          <section class="split-main">
+            <div class="shead">
+              <h2>Document</h2>
+              <span class="hint" id="data-meta"></span>
+            </div>
+            <div class="panel">
+              <pre class="log doc" id="data-doc">Select a row.</pre>
+            </div>
+            <p class="hint">
+              Read-only. Writes belong to <code>PUT /bicing/api/v2/config</code>, which keys
+              off the signed-in user &mdash; it cannot write someone else&rsquo;s row, and
+              writing straight to SQLite would skip the validation it enforces.
+            </p>
+          </section>
+        </div>
+
+      </div>
     </section>
 
     <section data-panel="process" hidden>
