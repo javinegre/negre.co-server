@@ -16,11 +16,15 @@ This repo is a thin Express router (`server.ts`) that mounts a set of
 independently-repo'd sub-apps as middleware. Each directory under `apps/`
 and `apis/` is its own separate git repo (own remote, own history) checked
 out as a sibling directory in production — they're gitignored here on
-purpose, this repo only ever tracks the glue that mounts them:
+purpose. This repo tracks the glue that mounts them plus the cross-cutting
+pieces that can't live in any one sub-app: the shared auth system, and the
+backoffice that administers the lot.
 
 ```
 /.well-known  -> well-known-folder/           (static, SSL cert validation)
 /files        -> public-files/                (static)
+/login        -> auth/public/                 (static passkey login page)
+/api/auth/*   -> better-auth handler           (Better Auth, see auth/auth.ts)
 /bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
 /bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
 /bicing-2026/ -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
@@ -29,11 +33,24 @@ purpose, this repo only ever tracks the glue that mounts them:
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
 /concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
+/backoffice/  -> backoffice/public/            (admin-only, ADMIN_EMAILS allowlist)
 /             -> apps/home                     (Express, catch-all: /, /des, /cv, 404 handler)
 ```
 
 There is no submodule/lockfile pinning these sub-repos to specific commits —
 each is deployed independently via its own `deploy.sh`.
+
+**Auth:** a single Better Auth instance (`auth/auth.ts`) gives every app under
+negre.co one passkey sign-in. Signup is invite-only — `yarn invite <email>`
+mints a single-use 24h link, and registering a passkey with it creates the
+account. Gate a route with `requireAuth` from `auth/require-auth.ts`.
+
+**Backoffice:** `/backoffice` administers accounts and invites, shows where each
+sub-app is checked out and built, reads per-user app data, and drives PM2 —
+status, logs, reload, and per-app deploys. It is gated by `requireAuth` then
+`requireAdmin`, an `ADMIN_EMAILS` allowlist; unset means nobody gets in. See
+`CLAUDE.md` for the shell-safety rules and why deploys are jobs rather than
+requests.
 
 **Process model:** production runs `tsx server.ts` (no build step; `tsx`
 transpiles on-demand, including transitively into the mounted sub-apps'
@@ -62,13 +79,20 @@ production's per-user config storage. See `CLAUDE.md` for the full rationale.
 
 **Commands:**
 ```
-yarn dev        # tsx watch server.ts
-yarn typecheck  # tsc --noEmit
-yarn lint       # eslint server.ts
-yarn pm2:start  # pm2 start ecosystem.config.js
-yarn pm2:reload # pm2 reload ecosystem.config.js --update-env
-yarn pm2:logs   # pm2 logs negre-co-server
+yarn dev            # tsx watch --env-file=.env server.ts (builds both bundles first)
+yarn build          # both client bundles (auth login page + backoffice)
+yarn typecheck      # tsc --noEmit, server project then tsconfig.client.json
+yarn lint           # eslint server.ts auth/*.ts backoffice/*.ts scripts/*.ts
+yarn invite <email> # mint a single-use 24h passkey invite link
+yarn auth:migrate   # run Better Auth's CLI migration
+yarn pm2:start      # build, then pm2 start ecosystem.config.js
+yarn pm2:reload     # build, then pm2 reload ecosystem.config.js --update-env
+yarn pm2:logs       # pm2 logs negre-co-server
 ```
+
+`yarn dev` needs a local `.env` — copy `.env.example` and fill in
+`BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `ADMIN_EMAILS`. The two
+client bundles are gitignored and must be built; every start script does it.
 
 ## Ubuntu 18.04 Setup
 Reference: https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04
