@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>negre.co — Backoffice</title>
+<link rel="stylesheet" href="/backoffice/style.css" />
+</head>
+<body>
+
+  <div class="hd">
+    <div class="brand"><b>negre.co</b><span>backoffice</span></div>
+    <div class="who">
+      <span class="em" id="admin-email"></span>
+      <button type="button" class="signout" id="signout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <a href="#users" data-tab="users">Users &amp; invites</a>
+    <a href="#apps" data-tab="apps">Apps &amp; APIs</a>
+    <a href="#data" data-tab="data">App data</a>
+    <a href="#process" data-tab="process">Process</a>
+  </nav>
+
+  <main>
+    <section data-panel="users" hidden>
+      <h2>Users &amp; invites</h2>
+      <div class="empty">Not built yet — phase 1.</div>
+    </section>
+
+    <section data-panel="apps" hidden>
+      <h2>Apps &amp; APIs</h2>
+      <div class="empty">Not built yet — phase 2.</div>
+    </section>
+
+    <section data-panel="data" hidden>
+      <h2>App data</h2>
+      <div class="empty">Not built yet — phase 3.</div>
+    </section>
+
+    <section data-panel="process" hidden>
+      <h2>Process</h2>
+      <div class="empty">Not built yet — phase 4.</div>
+    </section>
+  </main>
+
+  <script type="module" src="/backoffice/client.js"></script>
+</body>
+</html>

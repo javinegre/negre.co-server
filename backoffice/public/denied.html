@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>negre.co — Not an admin</title>
+<!--
+  Styles are inline on purpose: this page is sent by requireAdmin, which has
+  just refused the request, and backoffice/public/style.css sits behind that
+  same gate. A <link> to it would 403 and the page would render unstyled.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 26rem;
+    margin: 6rem auto;
+    padding: 0 1rem;
+    text-align: center;
+    background: Canvas;
+    color: CanvasText;
+  }
+  h1 { font-size: 1rem; margin: 0 0 0.5rem; }
+  p { color: light-dark(#6b6862, #9d9a94); margin: 0 0 1.25rem; }
+  svg { color: light-dark(#6b6862, #9d9a94); margin-bottom: 0.75rem; }
+  a { color: light-dark(#2a5da8, #79a9e8); text-underline-offset: 2px; }
+</style>
+</head>
+<body>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  <h1>Not an admin</h1>
+  <p>
+    You are signed in, but this area is limited. Nothing to do here — the rest of
+    negre.co works as usual.
+  </p>
+  <a href="/">Back to negre.co</a>
+</body>
+</html>

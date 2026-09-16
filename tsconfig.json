@@ -10,5 +10,8 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "include": ["server.ts", "auth/*.ts", "scripts/*.ts"]
+  "include": ["server.ts", "auth/*.ts", "backoffice/*.ts", "scripts/*.ts"],
+  // Browser entries are typechecked by tsconfig.client.json, which adds the
+  // DOM lib. Keeping them out here keeps DOM globals out of server scope.
+  "exclude": ["**/client-entry.ts"]
 }

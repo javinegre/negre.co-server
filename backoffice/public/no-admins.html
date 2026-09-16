@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>negre.co — No admins configured</title>
+<!-- Inline styles: see the note in denied.html. -->
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 30rem;
+    margin: 6rem auto;
+    padding: 0 1rem;
+    text-align: center;
+    background: Canvas;
+    color: CanvasText;
+  }
+  h1 { font-size: 1rem; margin: 0 0 0.5rem; }
+  p { color: light-dark(#6b6862, #9d9a94); margin: 0 0 1.25rem; }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+    color: light-dark(#c0392b, #e0614f);
+    border: 1px solid light-dark(#e3b0aa, #6b3b34);
+  }
+  pre {
+    text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    background: light-dark(#f6f5f2, #1b1a19);
+    border: 1px solid light-dark(#e6e4e0, #33322f);
+    border-radius: 0.5rem;
+    padding: 10px 12px;
+    margin: 0;
+    overflow-x: auto;
+  }
+  .c { color: light-dark(#6b6862, #9d9a94); }
+</style>
+</head>
+<body>
+  <span class="pill">not configured</span>
+  <h1>No admins are configured</h1>
+  <p>
+    The gate denies everyone, including you, until the allowlist is set on the droplet.
+    This is also logged as a warning at startup.
+  </p>
+<pre><span class="c"># .env</span>
+ADMIN_EMAILS=you@example.com
+
+<span class="c">$</span> yarn pm2:reload</pre>
+</body>
+</html>
