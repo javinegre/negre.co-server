@@ -7,20 +7,25 @@ import { passkey } from '@better-auth/passkey';
 const dbPath = process.env.AUTH_DB_PATH || path.join(__dirname, '..', 'data', 'auth.db');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
-const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:8080';
+export const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:8080';
+
+// Same-origin app under negre.co: no separate domain needs to be trusted in
+// production, only the local Vite dev server used by the bicing app. This is
+// the source of truth for which origins may use the auth client, and
+// backoffice/require-same-origin.ts reads it for the same question about the
+// backoffice API.
+export const trustedOrigins = [
+  'https://negre.co',
+  'https://www.negre.co',
+  'https://javi.negre.co',
+  'http://127.0.0.1:5173',
+];
 
 export const auth = betterAuth({
   database: new Database(dbPath),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL,
-  // Same-origin app under negre.co: no separate domain needs to be trusted
-  // in production, only the local Vite dev server used by the bicing app.
-  trustedOrigins: [
-    'https://negre.co',
-    'https://www.negre.co',
-    'https://javi.negre.co',
-    'http://127.0.0.1:5173',
-  ],
+  trustedOrigins,
   // nginx always overwrites X-Real-IP with its own view of the client
   // address (unlike X-Forwarded-For, which it appends to instead of
   // replacing — see nginx/negre.co.conf), so it's a single trustworthy
