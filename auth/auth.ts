@@ -74,13 +74,18 @@ export const auth = betterAuth({
             return { id: existing.user.id, name: existing.user.email };
           }
 
-          const user = await ctx.context.internalAdapter.createUser({
-            email,
-            name: email,
-            // The invite itself, sent out-of-band by an admin, stands in
-            // for email verification — there is no verification email.
-            emailVerified: true,
-          });
+          const user = await ctx.context.internalAdapter.createUser(
+            {
+              email,
+              name: email,
+              // The invite itself, sent out-of-band by an admin, stands in
+              // for email verification — there is no verification email.
+              emailVerified: true,
+            },
+            // Provisioning source, required since 1.7. It only feeds the
+            // optional user.validateUserInfo gate, which is not configured.
+            { method: 'passkey' },
+          );
           return { id: user.id, name: user.email };
         },
       },
