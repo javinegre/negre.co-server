@@ -14,7 +14,7 @@ const BicingApi = require('./apis/bicing-api/index');
 // the API's own repo.
 const BicingConfigApi = require('./apis/bicing-api/config-api');
 
-const BicingApp = express.static(__dirname + '/apps/bicing-2023/dist');
+const Bicing2023App = express.static(__dirname + '/apps/bicing-2023/dist');
 const Bicing2026App = express.static(__dirname + '/apps/bicing-2026/dist');
 // Staging build of bicing-2026, a second clone of that repo deployed by hand.
 // Kept on this origin rather than a stg. subdomain because the app resolves
@@ -52,11 +52,12 @@ app.use('/files', express.static(__dirname + '/public-files'));
 // handler above — never hoist it to the top level.
 app.use('/bicing/api/v2/config', requireAuth, BicingConfigApi);
 app.use('/bicing/api/', BicingApi);
-app.use('/bicing/', BicingApp);
-app.use('/bicing-2026/', Bicing2026App);
-// Deliberately not given an nginx alias like the apps above: those set
-// `expires 7d`, which would serve a week-old index.html after every rebuild.
-app.use('/staging-bicing-2026/', noIndex, StagingBicing2026App);
+// These two are deliberately not given an nginx alias like /bicing-2023/ and
+// /bicing-2021/: those set `expires 7d`, which would serve a week-old index.html
+// after every rebuild.
+app.use('/bicing/', Bicing2026App);
+app.use('/staging-bicing/', noIndex, StagingBicing2026App);
+app.use('/bicing-2023/', Bicing2023App);
 app.use('/bicing-2021/', Bicing2021App);
 app.use('/slides/', SlidesApp);
 
