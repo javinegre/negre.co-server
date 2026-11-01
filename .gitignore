@@ -9,3 +9,4 @@ node_modules/
 data/
 auth/public/client.js
 backoffice/public/client.js
+.claude/
