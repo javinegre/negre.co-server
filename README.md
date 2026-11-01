@@ -26,10 +26,10 @@ backoffice that administers the lot.
 /login        -> auth/public/                 (static passkey login page)
 /api/auth/*   -> better-auth handler           (Better Auth, see auth/auth.ts)
 /bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
-/bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
-/bicing-2026/ -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
-/staging-bicing-2026/
+/bicing/      -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
+/staging-bicing/
               -> apps/staging-bicing-2026/dist (static, staging clone of the above; noindex)
+/bicing-2023/ -> apps/bicing-2023/dist         (static, React+Vite SPA)
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
 /concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
@@ -59,20 +59,20 @@ each mounted sub-app is a shared in-process module (notably
 `apis/bicing-api`'s in-memory cache), and clustering would multiply
 independent caches/upstream API calls instead of speeding anything up.
 
-**Static assets:** nginx serves `/files`, `/.well-known`, `/bicing/`, and
+**Static assets:** nginx serves `/files`, `/.well-known`, `/bicing-2023/`, and
 `/bicing-2021/` directly (see `nginx/negre.co.conf`), bypassing Node
 entirely for those paths — this is additive/reversible, Express's
 `express.static` mounts stay in `server.ts` as a fallback. The `home` app
 (`/`, `/des`, `/cv`, custom 404) stays proxied to Node since it's the
 catch-all route with real routing logic.
 
-**Staging:** `/staging-bicing-2026/` serves a second, hand-deployed clone of
+**Staging:** `/staging-bicing/` serves a second, hand-deployed clone of
 the `bicing-2026` repo from `apps/staging-bicing-2026/dist`, built on the
-droplet with `BASE_PATH=/staging-bicing-2026/ npm run build`. It stays on this
+droplet with `BASE_PATH=/staging-bicing/ npm run build`. It stays on this
 origin rather than a `stg.` subdomain because the app hardcodes
 origin-relative auth paths (`/api/auth/get-session`, `/login`) and sends
 `credentials: 'include'` — off negre.co it would silently render signed out
-and the config API would need CORS. It is intentionally *not* given an nginx
+and the config API would need CORS. Neither it nor `/bicing/` is given an nginx
 alias: those blocks set `expires 7d`, which would serve a stale `index.html`
 for a week after each rebuild. Public but `noindex`, and it shares
 production's per-user config storage. See `CLAUDE.md` for the full rationale.

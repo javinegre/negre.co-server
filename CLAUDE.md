@@ -18,10 +18,10 @@ administers the lot.
 /login        -> auth/public/                 (static passkey login page)
 /api/auth/*   -> better-auth handler           (Better Auth, see auth/auth.ts)
 /bicing/api/  -> apis/bicing-api               (Express, cached proxy to Barcelona Open Data)
-/bicing/      -> apps/bicing-2023/dist         (static, React+Vite SPA)
-/bicing-2026/ -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
-/staging-bicing-2026/
+/bicing/      -> apps/bicing-2026/dist         (static, Svelte 5+Vite SPA)
+/staging-bicing/
               -> apps/staging-bicing-2026/dist (static, staging clone of the above; noindex)
+/bicing-2023/ -> apps/bicing-2023/dist         (static, React+Vite SPA)
 /bicing-2021/ -> apps/bicing-2021              (Express, older React+CRA app)
 /slides/      -> apps/slides                   (static)
 /concept-app/ -> placeholder route             (auth-gated, proves SSO end to end)
@@ -78,20 +78,23 @@ up. Secrets (`BETTER_AUTH_SECRET`, etc.) live only in the droplet's own
 `.env`, loaded via PM2's `interpreter_args: '--env-file=.env'` — never
 hardcoded or committed.
 
-**Static assets:** nginx serves `/files`, `/.well-known`, `/bicing/`, and
+**Static assets:** nginx serves `/files`, `/.well-known`, `/bicing-2023/`, and
 `/bicing-2021/` directly (see `nginx/negre.co.conf`), bypassing Node for
 those paths. This is additive/reversible — the `express.static` mounts stay
-in `server.ts` as a fallback. The `home` app (`/`, `/des`, `/cv`, custom 404)
-stays proxied to Node since it's the catch-all route with real routing logic.
+in `server.ts` as a fallback. `/bicing/` and `/staging-bicing/` deliberately
+have no alias, for the reason given under Staging below; the old `/bicing-2026/`
+and `/staging-bicing-2026/` paths 301 to them from nginx. The `home` app (`/`,
+`/des`, `/cv`, custom 404) stays proxied to Node since it's the catch-all route
+with real routing logic.
 
-## Staging (`/staging-bicing-2026/`)
+## Staging (`/staging-bicing/`)
 
 A second, hand-deployed clone of the `bicing-2026` repo lives at
 `apps/staging-bicing-2026` on the droplet and is mounted alongside the real
 one. Built there directly:
 
 ```
-BASE_PATH=/staging-bicing-2026/ npm run build
+BASE_PATH=/staging-bicing/ npm run build
 ```
 
 Two deliberate choices:
