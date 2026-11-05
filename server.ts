@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { Express, RequestHandler } from 'express';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth/auth';
@@ -15,12 +16,14 @@ const BicingApi = require('./apis/bicing-api/index');
 const BicingConfigApi = require('./apis/bicing-api/config-api');
 
 const Bicing2023App = express.static(__dirname + '/apps/bicing-2023/dist');
-const Bicing2026App = express.static(__dirname + '/apps/bicing-2026/dist');
+const Bicing2026Dir = __dirname + '/apps/bicing-2026/dist';
+const Bicing2026App = express.static(Bicing2026Dir);
 // Staging build of bicing-2026, a second clone of that repo deployed by hand.
 // Kept on this origin rather than a stg. subdomain because the app resolves
 // /api/auth/get-session, /api/auth/sign-out and /login as origin-relative
 // literals — off negre.co they 404, and the app silently renders signed out.
-const StagingBicing2026App = express.static(__dirname + '/apps/staging-bicing-2026/dist');
+const StagingBicing2026Dir = __dirname + '/apps/staging-bicing-2026/dist';
+const StagingBicing2026App = express.static(StagingBicing2026Dir);
 const Bicing2021App = require('./apps/bicing-2021/index');
 const HomeApp = require('./apps/home/index');
 const SlidesApp = require('./apps/slides/index');
@@ -30,6 +33,17 @@ const SlidesApp = require('./apps/slides/index');
 const noIndex: RequestHandler = (_req, res, next) => {
   res.set('X-Robots-Tag', 'noindex, nofollow');
   next();
+};
+
+// bicing-2026 routes its tabs by pathname (/bicing/plan, /bicing/account), so a
+// reload, a shared link or login's ?next= redirect asks for a path with no file
+// behind it. Hand those index.html and let the client pick the tab. Anything
+// with an extension is an asset and still 404s when missing, and /api/ is
+// excluded so an unknown API route is not answered with a page.
+const spaFallback = (dir: string): RequestHandler => (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (path.extname(req.path) || req.path.startsWith('/api/')) return next();
+  res.sendFile('index.html', { root: dir });
 };
 
 // Must be mounted before any express.json(): Better Auth reads the raw
@@ -55,8 +69,8 @@ app.use('/bicing/api/', BicingApi);
 // These two are deliberately not given an nginx alias like /bicing-2023/ and
 // /bicing-2021/: those set `expires 7d`, which would serve a week-old index.html
 // after every rebuild.
-app.use('/bicing/', Bicing2026App);
-app.use('/staging-bicing/', noIndex, StagingBicing2026App);
+app.use('/bicing/', Bicing2026App, spaFallback(Bicing2026Dir));
+app.use('/staging-bicing/', noIndex, StagingBicing2026App, spaFallback(StagingBicing2026Dir));
 app.use('/bicing-2023/', Bicing2023App);
 app.use('/bicing-2021/', Bicing2021App);
 app.use('/slides/', SlidesApp);
